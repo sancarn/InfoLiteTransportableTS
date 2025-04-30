@@ -131,7 +131,7 @@ async function parseEntry(entry: zip.Entry): Promise<ITransportableEntryData> {
       let parts = fileName.match(
         /^(?<typeID>[A-Z]+?)(?<deleted>XXX)?(?<cumulativeID>\d+)\.DAT$/
       );
-      let isDeleted = parts?.groups?.deleted === "XXX";
+      isDeleted = parts?.groups?.deleted === "XXX";
       let cumulativeID = parseInt(parts?.groups?.cumulativeID || "0", 10);
       let typeData = TransportableEntryTypes[
         parts?.groups?.typeID || "Unknown"

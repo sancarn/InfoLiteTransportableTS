@@ -9677,7 +9677,7 @@ async function parseEntry(entry) {
       let parts = fileName.match(
         /^(?<typeID>[A-Z]+?)(?<deleted>XXX)?(?<cumulativeID>\d+)\.DAT$/
       );
-      let isDeleted2 = parts?.groups?.deleted === "XXX";
+      isDeleted = parts?.groups?.deleted === "XXX";
       let cumulativeID = parseInt(parts?.groups?.cumulativeID || "0", 10);
       let typeData = InfoLiteEntryTypes_default[parts?.groups?.typeID || "Unknown"];
       if (!typeData)
