@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script type="module">
+            import InfoLiteTransportable from "https://rawcdn.githack.com/sancarn/InfoLiteTransportableTS/179a7db7df327458b07878844d18889aabe04353/dist/InfoLiteTransportable.js";
+            
+            let files = [];
+            let dsl = "";
+
+            let validateFiles = async () => {
+                if(!dsl || dsl.length === 0) return;
+                
+                const results = []
+                for (let file of files) {
+                    try {
+                        let infoLite = await InfoLiteTransportable.CreateFromFile(file, true);
+                        results.push({type: "success", file: file.name, errors: infoLite.validate(dsl)});
+                    } catch (e) {
+                        results.push({type: "error", file: file.name, errors: [e.message]});
+                    }
+                }
+                //For now log results
+                console.log(results);
+            };
+
+            document.getElementById("dsl").addEventListener("change", async (e) => {
+                dsl = e.target.value;
+                validateFiles();
+            });
+            document.getElementById("file").addEventListener("change", async (e) => {
+                files = Array.from(e.target.files);
+                validateFiles();
+            });
+        </script>
+    </head>
+    <body>
+        <textarea id="dsl" rows="6" cols="80" placeholder="Enter DSL rules here..."></textarea><br />
+        <input type="file" id="file" accept=".icmt" multiple />
+    </body>
+</html>

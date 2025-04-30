@@ -124,7 +124,7 @@ async function parseEntry(entry: zip.Entry): Promise<ITransportableEntryData> {
       icon = "";
     } else {
       let parts = fileName.match(
-        /^(?<typeID>[A-Z]+)(?<cumulativeID>\d+)\.DAT&/
+        /^(?<typeID>[A-Z]+)(?<cumulativeID>\d+)\.DAT$/
       );
       let cumulativeID = parseInt(parts?.groups?.cumulativeID || "0", 10);
       let typeData = TransportableEntryTypes[
@@ -254,7 +254,12 @@ export default class InfoLiteTransportable {
     let parsedEntries = (
       await Promise.all(
         entries.map(async (entry) => {
-          if (!entry.directory && entry.filename.match(/^\w+?\d+\.DAT$/i)) {
+          if (
+            !entry.directory &&
+            entry.filename.match(
+              /^(?:(?:\w+?\d+\.DAT)|(?:RootObjects\.DAT)|(?:Globals\.DAT))$/i
+            )
+          ) {
             return await parseEntry(entry);
           } else {
             return null;
@@ -280,6 +285,7 @@ export default class InfoLiteTransportable {
    * @param data - The constructor arguments.
    */
   constructor(data: IConstructorArguments) {
+    console.log({ constructorData: data });
     this.file = data.file;
     this.zip = data.zip;
 

@@ -9675,7 +9675,7 @@ async function parseEntry(entry) {
       icon = "";
     } else {
       let parts = fileName.match(
-        /^(?<typeID>[A-Z]+)(?<cumulativeID>\d+)\.DAT&/
+        /^(?<typeID>[A-Z]+)(?<cumulativeID>\d+)\.DAT$/
       );
       let cumulativeID = parseInt(parts?.groups?.cumulativeID || "0", 10);
       let typeData = InfoLiteEntryTypes_default[parts?.groups?.typeID || "Unknown"];
@@ -9733,6 +9733,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     __publicField(this, "zip");
     __publicField(this, "root", null);
     __publicField(this, "globals");
+    console.log({ constructorData: data });
     this.file = data.file;
     this.zip = data.zip;
     let globals = data.parsedEntries.find((e2) => e2.type == "DB:Globals");
@@ -9813,7 +9814,9 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     }
     let parsedEntries = (await Promise.all(
       entries.map(async (entry) => {
-        if (!entry.directory && entry.filename.match(/^\w+?\d+\.DAT$/i)) {
+        if (!entry.directory && entry.filename.match(
+          /^(?:(?:\w+?\d+\.DAT)|(?:RootObjects\.DAT)|(?:Globals\.DAT))$/i
+        )) {
           return await parseEntry(entry);
         } else {
           return null;
