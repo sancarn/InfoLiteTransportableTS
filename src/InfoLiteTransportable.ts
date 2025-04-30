@@ -54,6 +54,44 @@ export type ITransportableEntryType = {
 };
 
 /**
+ * A validation error represents a mismatch between an expected node from a DSL schema
+ * and an actual node in the transportable database.
+ */
+export type IValidationError = {
+  expected: IValidationNode | null;
+  actual: ITransportableEntry;
+  error: {
+    id: number;
+    message: string;
+    type:
+      | "actual:self-expected:self" //Expected and actual refer to the same node
+      | "actual:child-expected:parent" //Expected refers to the parent node, actual refers to the child node. E.G. Expected child of type [Model Object] - Actual child found was [Model Network]
+      | "actual:parent-expected:child"; //Expected refers to the child node, actual refers to the parent node. E.G. Actual child of type [Model Network] found errornously within an expected and successfully matched parent.
+  };
+};
+
+/**
+ * A validation tree node represents a node in the transportable database and it's corresponding validation errors.
+ */
+export type IValidationTreeNode = {
+  errors: IValidationError[];
+  children: IValidationTreeNode[];
+} & ITransportableEntry;
+
+/**
+ * A validation result represents the result of validating a transportable database against a DSL schema.
+ */
+export type IValidationResult =
+  | {
+      type: "success";
+    }
+  | {
+      type: "error";
+      errors: IValidationError[];
+      tree: IValidationTreeNode;
+    };
+
+/**
  * A map of variables that can be used in the DSL string.
  *
  * Variables are utilised in a DSL using the syntax `${variableName}` and can be used to match standard patterns in the DSL string.
@@ -395,20 +433,47 @@ export default class InfoLiteTransportable {
    * @param vars - A map of variables that can be used in the DSL string.
    * @returns - An array of error messages.
    */
-  validate(dslSchema: string, vars: IValidationVariables): string[] {
+  validate(dslSchema: string, vars: IValidationVariables): IValidationResult {
+    //Parse DSL
     let dsl = this.parseDSL(dslSchema, vars);
-    let errors: string[] = [];
 
+    //Sanity check
+    if (this.root == null) throw new Error("Root is null");
+
+    //Clone the tree to avoid mutating the original tree.
+    let cloner = (entry: ITransportableEntry): IValidationTreeNode => {
+      return {
+        ...entry,
+        children: entry.children.map(cloner),
+        errors: [],
+      };
+    };
+    let tree: IValidationTreeNode = cloner(this.root);
+
+    //Validate the tree
+    let errors: IValidationError[] = [];
     const recurse = (
       schemaNode: IValidationNode,
-      actualNode: ITransportableEntry,
-      path: string
+      actualNode: IValidationTreeNode
     ) => {
       // Check type
       if (schemaNode.type !== "ANY" && actualNode.type !== schemaNode.type) {
-        errors.push(
-          `ERROR Rule:${path}#L${schemaNode.lineNumber}: Expected type '${schemaNode.type}', got '${actualNode.type}'`
-        );
+        let error: IValidationError = {
+          expected: schemaNode,
+          actual: actualNode,
+          error: {
+            id: 1,
+            message: `Expected type '${schemaNode.type}', got '${actualNode.type}'.`,
+            type: "actual:self-expected:self",
+          },
+        };
+        errors.push(error);
+        actualNode.errors.push(error);
+
+        //Early return. In an ideal world we would perform a fuzzy match and forward onto matched children.
+        //But as it stands, if we don't match this node, all children will flag as "unexpected", which is not very helpful.
+        //TODO: Implement fuzzy compare
+        return;
       }
 
       // Report track unexpected children
@@ -426,21 +491,36 @@ export default class InfoLiteTransportable {
 
         //Track matched children
         matches.forEach((match) => matchedChildren.add(match));
-
         if (matches.length < expectedChild.min) {
-          errors.push(
-            `ERROR Rule:${path}#L${expectedChild.lineNumber}: Expected at least ${expectedChild.min} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}`
-          );
+          let error: IValidationError = {
+            expected: expectedChild,
+            actual: actualNode,
+            error: {
+              id: 2,
+              message: `Expected at least ${expectedChild.min} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}.`,
+              type: "actual:parent-expected:child",
+            },
+          };
+          errors.push(error);
+          actualNode.errors.push(error);
         }
         if (matches.length > expectedChild.max) {
-          errors.push(
-            `ERROR Rule:${path}#L${expectedChild.lineNumber}: Expected at most ${expectedChild.max} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}`
-          );
+          let error: IValidationError = {
+            expected: expectedChild,
+            actual: actualNode,
+            error: {
+              id: 3,
+              message: `Expected at most ${expectedChild.max} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}.`,
+              type: "actual:parent-expected:child",
+            },
+          };
+          errors.push(error);
+          actualNode.errors.push(error);
         }
 
         // Recurse into each matched child
-        matches.forEach((match, idx) => {
-          recurse(expectedChild, match, `${path}/${match.name}[${idx}]`);
+        matches.forEach((match) => {
+          recurse(expectedChild, match);
         });
       }
 
@@ -449,16 +529,25 @@ export default class InfoLiteTransportable {
         (child) => !matchedChildren.has(child)
       );
       unexpectedChildren.forEach((child) => {
-        errors.push(
-          `ERROR Unexpected child "[${child.type}] ${child.name}" at path "${child.path}".`
-        );
+        let error: IValidationError = {
+          expected: schemaNode,
+          actual: child,
+          error: {
+            id: 4,
+            message: `Unexpected child "[${child.type}] ${child.name}" of parent "[${actualNode.type}] ${actualNode.name}".`,
+            type: "actual:child-expected:parent",
+          },
+        };
+        errors.push(error);
+        child.errors.push(error);
       });
     };
 
-    if (this.root == null) throw new Error("Root is null");
-    recurse(dsl, this.root, "Root");
+    recurse(dsl, tree);
 
-    return errors;
+    return errors.length > 0
+      ? { type: "error", errors, tree }
+      : { type: "success" };
   }
 
   /**

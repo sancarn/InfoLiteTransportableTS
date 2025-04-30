@@ -9880,12 +9880,30 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
    */
   validate(dslSchema, vars) {
     let dsl = this.parseDSL(dslSchema, vars);
+    if (this.root == null) throw new Error("Root is null");
+    let cloner = (entry) => {
+      return {
+        ...entry,
+        children: entry.children.map(cloner),
+        errors: []
+      };
+    };
+    let tree = cloner(this.root);
     let errors = [];
-    const recurse = (schemaNode, actualNode, path) => {
+    const recurse = (schemaNode, actualNode) => {
       if (schemaNode.type !== "ANY" && actualNode.type !== schemaNode.type) {
-        errors.push(
-          `ERROR Rule:${path}#L${schemaNode.lineNumber}: Expected type '${schemaNode.type}', got '${actualNode.type}'`
-        );
+        let error = {
+          expected: schemaNode,
+          actual: actualNode,
+          error: {
+            id: 1,
+            message: `Expected type '${schemaNode.type}', got '${actualNode.type}'.`,
+            type: "actual:self-expected:self"
+          }
+        };
+        errors.push(error);
+        actualNode.errors.push(error);
+        return;
       }
       const matchedChildren = /* @__PURE__ */ new Set();
       for (const expectedChild of schemaNode.children) {
@@ -9896,31 +9914,54 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
         });
         matches.forEach((match) => matchedChildren.add(match));
         if (matches.length < expectedChild.min) {
-          errors.push(
-            `ERROR Rule:${path}#L${expectedChild.lineNumber}: Expected at least ${expectedChild.min} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}`
-          );
+          let error = {
+            expected: expectedChild,
+            actual: actualNode,
+            error: {
+              id: 2,
+              message: `Expected at least ${expectedChild.min} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}.`,
+              type: "actual:parent-expected:child"
+            }
+          };
+          errors.push(error);
+          actualNode.errors.push(error);
         }
         if (matches.length > expectedChild.max) {
-          errors.push(
-            `ERROR Rule:${path}#L${expectedChild.lineNumber}: Expected at most ${expectedChild.max} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}`
-          );
+          let error = {
+            expected: expectedChild,
+            actual: actualNode,
+            error: {
+              id: 3,
+              message: `Expected at most ${expectedChild.max} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}.`,
+              type: "actual:parent-expected:child"
+            }
+          };
+          errors.push(error);
+          actualNode.errors.push(error);
         }
-        matches.forEach((match, idx) => {
-          recurse(expectedChild, match, `${path}/${match.name}[${idx}]`);
+        matches.forEach((match) => {
+          recurse(expectedChild, match);
         });
       }
       const unexpectedChildren = actualNode.children.filter(
         (child) => !matchedChildren.has(child)
       );
       unexpectedChildren.forEach((child) => {
-        errors.push(
-          `ERROR Unexpected child "[${child.type}] ${child.name}" at path "${child.path}".`
-        );
+        let error = {
+          expected: schemaNode,
+          actual: child,
+          error: {
+            id: 4,
+            message: `Unexpected child "[${child.type}] ${child.name}" of parent "[${actualNode.type}] ${actualNode.name}".`,
+            type: "actual:child-expected:parent"
+          }
+        };
+        errors.push(error);
+        child.errors.push(error);
       });
     };
-    if (this.root == null) throw new Error("Root is null");
-    recurse(dsl, this.root, "Root");
-    return errors;
+    recurse(dsl, tree);
+    return errors.length > 0 ? { type: "error", errors, tree } : { type: "success" };
   }
   /**
    * Preprocesses the DSL string by replacing variables with their corresponding regular expressions.
