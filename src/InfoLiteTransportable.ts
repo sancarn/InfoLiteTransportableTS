@@ -409,7 +409,6 @@ export default class InfoLiteTransportable {
         errors.push(
           `ERROR Rule:${path}#L${schemaNode.lineNumber}: Expected type '${schemaNode.type}', got '${actualNode.type}'`
         );
-        return;
       }
 
       // Report track unexpected children

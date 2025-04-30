@@ -9886,7 +9886,6 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
         errors.push(
           `ERROR Rule:${path}#L${schemaNode.lineNumber}: Expected type '${schemaNode.type}', got '${actualNode.type}'`
         );
-        return;
       }
       const matchedChildren = /* @__PURE__ */ new Set();
       for (const expectedChild of schemaNode.children) {
