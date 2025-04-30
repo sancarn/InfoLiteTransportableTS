@@ -21,6 +21,10 @@
                 }
                 //For now log results
                 console.log(results);
+                document.getElementById("results").innerHTML = 
+                    results.map((result)=>{
+                        return `<li>${result.file}<ul>${result.errors.map((error)=>`<li>${error}</li>`)}</ul></li>`
+                    })
             };
 
             document.getElementById("dsl").addEventListener("change", async (e) => {
@@ -37,5 +41,6 @@
         <textarea id="dsl" rows="6" cols="80" placeholder="Enter DSL rules here..."></textarea><br />
         <input type="file" id="file" accept=".icmt" multiple />
         <button onclick="validateFiles()">Validate</button>
+        <ul id="results"></ul>
     </body>
 </html>

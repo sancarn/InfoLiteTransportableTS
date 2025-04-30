@@ -451,7 +451,7 @@ export default class InfoLiteTransportable {
       );
       unexpectedChildren.forEach((child) => {
         errors.push(
-          `ERROR Unexpected child [${child.type}] ${child.name} at path "${child.path}".`
+          `ERROR Unexpected child "[${child.type}] ${child.name}" at path "${child.path}".`
         );
       });
     };
@@ -561,6 +561,17 @@ export default class InfoLiteTransportable {
     type IData = { count: string; type: string; pattern: string };
     const { count, type, pattern } = data.groups as IData;
 
+    const regexParts = pattern.match(
+      /\/(?<regexPattern>(?:\\\/|[^\/])*)\/(?<regexFlags>[iu]*)/
+    );
+    if (regexParts == null)
+      throw new Error(
+        `Invalid pattern found in line "${lineNumber}" of Validation DSL: '${pattern}'`
+      );
+    //@ts-ignore
+    const { regexPattern, regexFlags } = regexParts.groups;
+    const regexNameMatcher = new RegExp(regexPattern, regexFlags);
+
     //Parse count to min/max format
     let min = 0;
     let max = 0;
@@ -584,7 +595,7 @@ export default class InfoLiteTransportable {
         type,
         min,
         max,
-        name: new RegExp(pattern),
+        name: regexNameMatcher,
         children: [],
         lineNumber,
       },

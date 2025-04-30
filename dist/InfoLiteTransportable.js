@@ -9915,7 +9915,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
       );
       unexpectedChildren.forEach((child) => {
         errors.push(
-          `ERROR Unexpected child [${child.type}] ${child.name} at path "${child.path}".`
+          `ERROR Unexpected child "[${child.type}] ${child.name}" at path "${child.path}".`
         );
       });
     };
@@ -10006,6 +10006,15 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     );
     if (data == null) throw new Error(`Invalid line: '${clean}'`);
     const { count, type, pattern } = data.groups;
+    const regexParts = pattern.match(
+      /\/(?<regexPattern>(?:\\\/|[^\/])*)\/(?<regexFlags>[iu]*)/
+    );
+    if (regexParts == null)
+      throw new Error(
+        `Invalid pattern found in line "${lineNumber}" of Validation DSL: '${pattern}'`
+      );
+    const { regexPattern, regexFlags } = regexParts.groups;
+    const regexNameMatcher = new RegExp(regexPattern, regexFlags);
     let min = 0;
     let max = 0;
     if (count) {
@@ -10028,7 +10037,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
         type,
         min,
         max,
-        name: new RegExp(pattern),
+        name: regexNameMatcher,
         children: [],
         lineNumber
       }
