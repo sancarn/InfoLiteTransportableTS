@@ -9664,7 +9664,7 @@ var InfoLiteTransportableVersions_default = {
 async function parseEntry(entry) {
   return new Promise(async (resolve, reject) => {
     let fileName = entry.filename;
-    let id, type, icon;
+    let id, type, icon, isDeleted = false;
     if (fileName.match(/RootObjects\.dat/i)) {
       id = 0;
       type = "Root";
@@ -9675,10 +9675,13 @@ async function parseEntry(entry) {
       icon = "";
     } else {
       let parts = fileName.match(
-        /^(?<typeID>[A-Z]+)(?<cumulativeID>\d+)\.DAT$/
+        /^(?<typeID>[A-Z]+?)(?<deleted>XXX)?(?<cumulativeID>\d+)\.DAT$/
       );
+      let isDeleted2 = parts?.groups?.deleted === "XXX";
       let cumulativeID = parseInt(parts?.groups?.cumulativeID || "0", 10);
       let typeData = InfoLiteEntryTypes_default[parts?.groups?.typeID || "Unknown"];
+      if (!typeData)
+        throw new Error(`Unknown typeID: ${parts?.groups?.typeID}`);
       if (typeData.id != null) {
         id = typeData.id + cumulativeID * 256;
       } else {
@@ -9718,6 +9721,7 @@ async function parseEntry(entry) {
       id,
       type,
       icon,
+      isDeleted,
       zipEntry: entry,
       data
     });

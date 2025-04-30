@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <script type="module">
-            import InfoLiteTransportable from "https://rawcdn.githack.com/sancarn/InfoLiteTransportableTS/179a7db7df327458b07878844d18889aabe04353/dist/InfoLiteTransportable.js";
+            import InfoLiteTransportable from "https://raw.githack.com/sancarn/InfoLiteTransportableTS/main/dist/InfoLiteTransportable.js";
             
             let files = [];
             let dsl = "";
@@ -36,5 +36,6 @@
     <body>
         <textarea id="dsl" rows="6" cols="80" placeholder="Enter DSL rules here..."></textarea><br />
         <input type="file" id="file" accept=".icmt" multiple />
+        <button onclick="validateFiles()">Validate</button>
     </body>
 </html>
