@@ -84,6 +84,7 @@ export type IValidationTreeNode = {
 export type IValidationResult =
   | {
       type: "success";
+      tree: IValidationTreeNode;
     }
   | {
       type: "error";
@@ -546,8 +547,8 @@ export default class InfoLiteTransportable {
     recurse(dsl, tree);
 
     return errors.length > 0
-      ? { type: "error", errors, tree }
-      : { type: "success" };
+      ? { type: "error", tree, errors }
+      : { type: "success", tree };
   }
 
   /**
@@ -702,4 +703,34 @@ export default class InfoLiteTransportable {
       },
     };
   }
+}
+
+export function validationResultsToString(result: IValidationResult): string {
+  let lines: string[] = [];
+  let recurse = (
+    node: IValidationTreeNode,
+    depth: number,
+    hasInheritedError: boolean = false
+  ) => {
+    const indent = "|  ".repeat(depth);
+    const label = `[${node.type}] ${node.name}`;
+    const isDirectError = node.errors.length > 0;
+    const status = isDirectError ? "⛔" : hasInheritedError ? "🟤" : "✅";
+    if (node.errors.length == 1) {
+      //Print inline error
+      lines.push(
+        `${status} ${indent}|- ${label} ::: ${node.errors[0].error.message}`
+      );
+    } else if (node.errors.length > 1) {
+      //Print errors as children
+      for (const error of node.errors) {
+        lines.push(`${status} ${indent}|  |- ${error.error.message}`);
+      }
+    }
+    node.children.forEach((child) => {
+      recurse(child, depth + 1, isDirectError || hasInheritedError);
+    });
+  };
+  recurse(result.tree, 0);
+  return lines.join("\n");
 }

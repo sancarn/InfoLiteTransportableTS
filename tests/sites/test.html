@@ -3,7 +3,8 @@
     <head>
         <script type="module">
             import InfoLiteTransportable from "https://raw.githack.com/sancarn/InfoLiteTransportableTS/main/dist/InfoLiteTransportable.js";
-            
+            import { validationResultsToString } from "https://raw.githack.com/sancarn/InfoLiteTransportableTS/main/dist/InfoLiteTransportable.js";
+
             let files = [];
             let dsl = "";
 
@@ -21,10 +22,7 @@
                 }
                 //For now log results
                 console.log(results);
-                document.getElementById("results").innerHTML = 
-                    results.map((result)=>{
-                        return `<li>${result.file}<ul>${result.errors.map((error)=>`<li>${error}</li>`)}</ul></li>`
-                    })
+                document.getElementById("results").value = validationResultsToString(results);
             };
 
             document.getElementById("dsl").addEventListener("change", async (e) => {
@@ -41,6 +39,6 @@
         <textarea id="dsl" rows="6" style="width: 100%;" placeholder="Enter DSL rules here..."></textarea><br />
         <input type="file" id="file" accept=".icmt" multiple />
         <button onclick="validateFiles()">Validate</button>
-        <ul id="results"></ul>
+        <textarea id="results" rows="6" style="width: 100%;" placeholder="Validation results will appear here..."></textarea>
     </body>
 </html>

@@ -9961,7 +9961,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
       });
     };
     recurse(dsl, tree);
-    return errors.length > 0 ? { type: "error", errors, tree } : { type: "success" };
+    return errors.length > 0 ? { type: "error", tree, errors } : { type: "success", tree };
   }
   /**
    * Preprocesses the DSL string by replacing variables with their corresponding regular expressions.
@@ -10093,7 +10093,31 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     };
   }
 };
+function validationResultsToString(result) {
+  let lines = [];
+  let recurse = (node, depth, hasInheritedError = false) => {
+    const indent = "|  ".repeat(depth);
+    const label = `[${node.type}] ${node.name}`;
+    const isDirectError = node.errors.length > 0;
+    const status = isDirectError ? "\u26D4" : hasInheritedError ? "\u{1F7E4}" : "\u2705";
+    if (node.errors.length == 1) {
+      lines.push(
+        `${status} ${indent}|- ${label} ::: ${node.errors[0].error.message}`
+      );
+    } else if (node.errors.length > 1) {
+      for (const error of node.errors) {
+        lines.push(`${status} ${indent}|  |- ${error.error.message}`);
+      }
+    }
+    node.children.forEach((child) => {
+      recurse(child, depth + 1, isDirectError || hasInheritedError);
+    });
+  };
+  recurse(result.tree, 0);
+  return lines.join("\n");
+}
 export {
-  InfoLiteTransportable as default
+  InfoLiteTransportable as default,
+  validationResultsToString
 };
 //# sourceMappingURL=InfoLiteTransportable.js.map
