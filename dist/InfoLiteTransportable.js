@@ -10108,6 +10108,10 @@ function validationResultsToString(result) {
       for (const error of node.errors) {
         lines.push(`${status} ${indent}|  |- ${error.error.message}`);
       }
+    } else if (hasInheritedError) {
+      lines.push(`${status} ${indent}|- ${label} ::: (inherited from parent)`);
+    } else {
+      lines.push(`${status} ${indent}|- ${label}`);
     }
     node.children.forEach((child) => {
       recurse(child, depth + 1, isDirectError || hasInheritedError);

@@ -11,18 +11,22 @@
             window.validateFiles = async () => {
                 if(!dsl || dsl.length === 0) return;
                 
-                const results = []
+                const lines = []
                 for (let file of files) {
                     try {
                         let infoLite = await InfoLiteTransportable.CreateFromFile(file, true);
-                        results.push({type: "success", file: file.name, errors: infoLite.validate(dsl)});
+                        let validation = infoLite.validate(dsl);
+
+                        lines.push(
+                            "✅ " + file.name + ": \n" +
+                            validationResultsToString(validation)
+                        );
                     } catch (e) {
-                        results.push({type: "error", file: file.name, errors: [e.message]});
+                        lines.push(`⛔ ${file.name} ::: ${e.message}`);
                     }
                 }
                 //For now log results
-                console.log(results);
-                document.getElementById("results").value = validationResultsToString(results);
+                document.getElementById("results").value = lines.join("\n\n"); 
             };
 
             document.getElementById("dsl").addEventListener("change", async (e) => {

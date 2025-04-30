@@ -726,6 +726,12 @@ export function validationResultsToString(result: IValidationResult): string {
       for (const error of node.errors) {
         lines.push(`${status} ${indent}|  |- ${error.error.message}`);
       }
+    } else if (hasInheritedError) {
+      //Print node with error message "(inherited)"
+      lines.push(`${status} ${indent}|- ${label} ::: (inherited from parent)`);
+    } else {
+      //Print node with no error message
+      lines.push(`${status} ${indent}|- ${label}`);
     }
     node.children.forEach((child) => {
       recurse(child, depth + 1, isDirectError || hasInheritedError);
