@@ -9751,6 +9751,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
       name: "Root",
       type: "Root",
       path: ">Root",
+      depth: 0,
       data: root,
       children: []
     };
@@ -9773,8 +9774,15 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
       const parentMain = entryStore[entry.data["#Parent"]];
       const entryMain = entryStore[entry.id?.toString()];
       parentMain.children.push(entryMain);
-      entryMain.path = `${parentMain.path}>[${entryMain.type}] ${entryMain.name}`;
     });
+    let setDepthAndPath = (node, path = "", depth = 0) => {
+      node.depth = depth;
+      node.path = `${path}>[${node.type}] ${node.name}`;
+      node.children.forEach((child) => {
+        setDepthAndPath(child, node.path, depth + 1);
+      });
+    };
+    setDepthAndPath(this.root);
   }
   /**
    * Tests if a file is a valid InfoLite transportable database.

@@ -20,6 +20,7 @@ export type ITransportableEntry = {
   name: string;
   type: string;
   path: string;
+  depth: number;
   data: ITransportableEntryData;
   children: ITransportableEntry[];
 };
@@ -310,6 +311,7 @@ export default class InfoLiteTransportable {
       name: "Root",
       type: "Root",
       path: ">Root",
+      depth: 0,
       data: root,
       children: [],
     };
@@ -336,8 +338,21 @@ export default class InfoLiteTransportable {
       const parentMain: ITransportableEntry = entryStore[entry.data["#Parent"]];
       const entryMain: ITransportableEntry = entryStore[entry.id?.toString()];
       parentMain.children.push(entryMain);
-      entryMain.path = `${parentMain.path}>[${entryMain.type}] ${entryMain.name}`;
     });
+
+    //Recursively set depth and path
+    let setDepthAndPath = (
+      node: ITransportableEntry,
+      path: string = "",
+      depth: number = 0
+    ) => {
+      node.depth = depth;
+      node.path = `${path}>[${node.type}] ${node.name}`;
+      node.children.forEach((child) => {
+        setDepthAndPath(child, node.path, depth + 1);
+      });
+    };
+    setDepthAndPath(this.root);
   }
 
   /**
