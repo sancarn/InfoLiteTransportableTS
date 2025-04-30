@@ -9664,7 +9664,10 @@ var InfoLiteTransportableVersions_default = {
 async function parseEntry(entry) {
   return new Promise(async (resolve, reject) => {
     let fileName = entry.filename;
-    let id, type, icon, isDeleted = false;
+    let id = null;
+    let type = "";
+    let icon = "";
+    let isDeleted = false;
     if (fileName.match(/RootObjects\.dat/i)) {
       id = 0;
       type = "Root";

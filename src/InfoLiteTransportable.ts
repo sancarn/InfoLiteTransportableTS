@@ -115,10 +115,10 @@ async function parseEntry(entry: zip.Entry): Promise<ITransportableEntryData> {
   return new Promise(async (resolve, reject) => {
     let fileName = entry.filename;
 
-    let id,
-      type,
-      icon,
-      isDeleted = false;
+    let id: number | null = null;
+    let type = "";
+    let icon = "";
+    let isDeleted = false;
     if (fileName.match(/RootObjects\.dat/i)) {
       id = 0;
       type = "Root";
