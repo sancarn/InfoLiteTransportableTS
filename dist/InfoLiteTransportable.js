@@ -9706,7 +9706,7 @@ async function parseEntry(entry) {
       );
       return;
     }
-    let data = text.split("\n").reduce((acc, line) => {
+    let data = text.split(/\r?\n/).reduce((acc, line) => {
       let match = line.match(
         /^\s*(?<name>[^,]+),\s*(?<valid>[01]),\s*(?<value>.*)$/
       );
