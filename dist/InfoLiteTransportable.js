@@ -10006,13 +10006,19 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     if (data == null) throw new Error(`Invalid line: '${clean}'`);
     const { count, type, pattern } = data.groups;
     const regexParts = pattern.match(
-      /\/(?<regexPattern>(?:\\\/|[^\/])*)\/(?<regexFlags>[iu]*)/
+      /\/(?<regexPattern>(?:\\\/|[^\/])*)\/(?<regexFlags>[iuA]*)/
+      //A is a custom flag for unanchoring the regex. All regexes will be anchored by default.
     );
     if (regexParts == null)
       throw new Error(
         `Invalid pattern found in line "${lineNumber}" of Validation DSL: '${pattern}'`
       );
-    const { regexPattern, regexFlags } = regexParts.groups;
+    let { regexPattern, regexFlags } = regexParts.groups;
+    if (!regexFlags.includes("A")) {
+      regexPattern = `^${regexPattern}$`;
+    } else {
+      regexFlags = regexFlags.replace("A", "");
+    }
     const regexNameMatcher = new RegExp(regexPattern, regexFlags);
     let min = 0;
     let max = 0;
@@ -10025,6 +10031,9 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
         const parts = count.split("+");
         min = parseInt(parts[0], 10);
         max = Infinity;
+      } else {
+        min = parseInt(count, 10);
+        max = min;
       }
     } else {
       min = 1;

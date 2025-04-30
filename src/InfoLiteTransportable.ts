@@ -561,14 +561,24 @@ export default class InfoLiteTransportable {
     const { count, type, pattern } = data.groups as IData;
 
     const regexParts = pattern.match(
-      /\/(?<regexPattern>(?:\\\/|[^\/])*)\/(?<regexFlags>[iu]*)/
+      /\/(?<regexPattern>(?:\\\/|[^\/])*)\/(?<regexFlags>[iuA]*)/ //A is a custom flag for unanchoring the regex. All regexes will be anchored by default.
     );
     if (regexParts == null)
       throw new Error(
         `Invalid pattern found in line "${lineNumber}" of Validation DSL: '${pattern}'`
       );
     //@ts-ignore
-    const { regexPattern, regexFlags } = regexParts.groups;
+    let { regexPattern, regexFlags } = regexParts.groups;
+
+    //Anchoring regex by default
+    if (!regexFlags.includes("A")) {
+      regexPattern = `^${regexPattern}$`;
+    } else {
+      //RegExp will throw if flag A is passed, so remove it
+      regexFlags = regexFlags.replace("A", "");
+    }
+
+    //Creawte regex matcher for name
     const regexNameMatcher = new RegExp(regexPattern, regexFlags);
 
     //Parse count to min/max format
@@ -583,6 +593,9 @@ export default class InfoLiteTransportable {
         const parts = count.split("+");
         min = parseInt(parts[0], 10);
         max = Infinity;
+      } else {
+        min = parseInt(count, 10);
+        max = min;
       }
     } else {
       min = 1;
