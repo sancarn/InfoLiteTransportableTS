@@ -287,6 +287,7 @@ export default class InfoLiteTransportable {
   file: File;
   zip: IInfoLiteZip;
   root: ITransportableEntry | null = null;
+  deleted: ITransportableEntry[] = [];
   globals: ITransportableEntryMetaData | undefined;
 
   /**
@@ -337,7 +338,13 @@ export default class InfoLiteTransportable {
       //Add entry to parent and set path
       const parentMain: ITransportableEntry = entryStore[entry.data["#Parent"]];
       const entryMain: ITransportableEntry = entryStore[entry.id?.toString()];
-      parentMain.children.push(entryMain);
+
+      //Parent information for deleted entires is wiped, usually these are added to a "Recycle Bin" group. Thusly, we add them to `deleted` array.
+      if (entryMain.data.isDeleted) {
+        this.deleted.push(entryMain);
+      } else {
+        parentMain.children.push(entryMain);
+      }
     });
 
     //Recursively set depth and path

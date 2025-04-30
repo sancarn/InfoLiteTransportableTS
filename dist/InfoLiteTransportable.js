@@ -9736,6 +9736,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     __publicField(this, "file");
     __publicField(this, "zip");
     __publicField(this, "root", null);
+    __publicField(this, "deleted", []);
     __publicField(this, "globals");
     console.log({ constructorData: data });
     this.file = data.file;
@@ -9773,7 +9774,11 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
       if (entry.id == null) return;
       const parentMain = entryStore[entry.data["#Parent"]];
       const entryMain = entryStore[entry.id?.toString()];
-      parentMain.children.push(entryMain);
+      if (entryMain.data.isDeleted) {
+        this.deleted.push(entryMain);
+      } else {
+        parentMain.children.push(entryMain);
+      }
     });
     let setDepthAndPath = (node, path = "", depth = 0) => {
       node.depth = depth;
