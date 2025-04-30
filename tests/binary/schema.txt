@@ -1,0 +1,20 @@
+Root
+|- 1# [Model Group] /^CAB$/
+|  |- 1# [Model Network] /Model/i
+|  |- 1# [Waste Profile] /.*/
+|  |- 1# [Trade Profile] /.*/
+|  |- 0-1# [Inflow] /.*/
+|  |- 0-1# [Ground Infiltration] /.*/
+|- 1# [Model Group] /^KST$/
+|  |- 1# [Model Network] /Model/i
+|  |- 1# [Waste Profile] /.*/
+|  |- 1# [Trade Profile] /.*/
+|  |- 0-1# [Inflow] /.*/
+|  |- 0-1# [Ground Infiltration] /.*/
+|- 1# [Model Group] /^PLT$/
+|  |- 1# [Model Network] /Model/i
+|  |- 1# [Waste Profile] /.*/
+|  |- 1# [Trade Profile] /.*/
+|  |- 0-1# [Inflow] /.*/
+|  |- 0-1# [Ground Infiltration] /.*/
+

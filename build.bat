@@ -1,0 +1,2 @@
+esbuild src/InfoLiteTransportable.ts --bundle --outfile=dist/InfoLiteTransportable.js --format=esm --sourcemap --target=es2020
+esbuild src/InfoLiteTransportable.ts --bundle --outfile=dist/InfoLiteTransportable.min.js --format=esm --sourcemap --target=es2020 --minify
