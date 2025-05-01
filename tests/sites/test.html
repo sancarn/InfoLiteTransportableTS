@@ -16,9 +16,8 @@
                     try {
                         let infoLite = await InfoLiteTransportable.CreateFromFile(file, true);
                         let validation = infoLite.validate(dsl);
-
                         lines.push(
-                            "✅ " + file.name + ": \n" +
+                            "✅ " + file.name + `: ${validation.type == "success" ? "No Errors" : "Errors found: " + validation.errors.length} \n` +
                             validationResultsToString(validation)
                         );
                     } catch (e) {
@@ -40,9 +39,9 @@
         </script>
     </head>
     <body>
-        <textarea id="dsl" rows="6" style="width: 100%;" placeholder="Enter DSL rules here..."></textarea><br />
+        <textarea id="dsl" rows="30" style="width: 100%;" placeholder="Enter DSL rules here..."></textarea><br />
         <input type="file" id="file" accept=".icmt" multiple />
         <button onclick="validateFiles()">Validate</button>
-        <textarea id="results" rows="6" style="width: 100%;" placeholder="Validation results will appear here..."></textarea>
+        <textarea id="results" rows="30" style="width: 100%;" placeholder="Validation results will appear here..."></textarea>
     </body>
 </html>

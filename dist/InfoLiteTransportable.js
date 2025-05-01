@@ -9891,6 +9891,9 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     let tree = cloner(this.root);
     let errors = [];
     const recurse = (schemaNode, actualNode) => {
+      if (schemaNode.type === "ANY" && schemaNode.skipDescendants) {
+        return;
+      }
       if (schemaNode.type !== "ANY" && actualNode.type !== schemaNode.type) {
         let error = {
           expected: schemaNode,
@@ -9927,17 +9930,20 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
           actualNode.errors.push(error);
         }
         if (matches.length > expectedChild.max) {
-          let error = {
-            expected: expectedChild,
-            actual: actualNode,
-            error: {
-              id: 3,
-              message: `Expected at most ${expectedChild.max} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}.`,
-              type: "actual:parent-expected:child"
-            }
-          };
-          errors.push(error);
-          actualNode.errors.push(error);
+          const excessMatches = matches.slice(expectedChild.max);
+          for (const child of excessMatches) {
+            let error = {
+              expected: expectedChild,
+              actual: child,
+              error: {
+                id: 3,
+                message: `Exceeded maximum of ${expectedChild.max} allowed [${expectedChild.type}] child(ren) matching ${expectedChild.name}.`,
+                type: "actual:parent-expected:child"
+              }
+            };
+            errors.push(error);
+            child.errors.push(error);
+          }
         }
         matches.forEach((match) => {
           recurse(expectedChild, match);
@@ -10038,6 +10044,20 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
             max: Infinity,
             children: [],
             lineNumber
+          }
+        };
+      case "**":
+        return {
+          depth,
+          node: {
+            type: "ANY",
+            name: /.*/,
+            min: 0,
+            max: Infinity,
+            children: [],
+            lineNumber,
+            skipDescendants: true
+            //Skip all descendants of this node
           }
         };
     }

@@ -113,6 +113,7 @@ export type IValidationNode = {
   name: RegExp | null;
   children: IValidationNode[];
   lineNumber?: number;
+  skipDescendants?: boolean;
 };
 
 /**
@@ -457,6 +458,11 @@ export default class InfoLiteTransportable {
       schemaNode: IValidationNode,
       actualNode: IValidationTreeNode
     ) => {
+      //Skip validation on node and all descendants of this node if skipDescendants is set
+      if (schemaNode.type === "ANY" && schemaNode.skipDescendants) {
+        return;
+      }
+
       // Check type
       if (schemaNode.type !== "ANY" && actualNode.type !== schemaNode.type) {
         let error: IValidationError = {
@@ -506,17 +512,20 @@ export default class InfoLiteTransportable {
           actualNode.errors.push(error);
         }
         if (matches.length > expectedChild.max) {
-          let error: IValidationError = {
-            expected: expectedChild,
-            actual: actualNode,
-            error: {
-              id: 3,
-              message: `Expected at most ${expectedChild.max} child(ren) of type [${expectedChild.type}] matching ${expectedChild.name}, found ${matches.length}.`,
-              type: "actual:parent-expected:child",
-            },
-          };
-          errors.push(error);
-          actualNode.errors.push(error);
+          const excessMatches = matches.slice(expectedChild.max);
+          for (const child of excessMatches) {
+            let error: IValidationError = {
+              expected: expectedChild,
+              actual: child,
+              error: {
+                id: 3,
+                message: `Exceeded maximum of ${expectedChild.max} allowed [${expectedChild.type}] child(ren) matching ${expectedChild.name}.`,
+                type: "actual:parent-expected:child",
+              },
+            };
+            errors.push(error);
+            child.errors.push(error);
+          }
         }
 
         // Recurse into each matched child
@@ -638,6 +647,19 @@ export default class InfoLiteTransportable {
             max: Infinity,
             children: [],
             lineNumber,
+          },
+        };
+      case "**":
+        return {
+          depth,
+          node: {
+            type: "ANY",
+            name: /.*/,
+            min: 0,
+            max: Infinity,
+            children: [],
+            lineNumber,
+            skipDescendants: true, //Skip all descendants of this node
           },
         };
     }
