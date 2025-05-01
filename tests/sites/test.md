@@ -653,6 +653,15 @@ As above.
 #### DSL
 
 ```
+Root
+|- 1# [Asset Group] /Asset group/
+|  |- 0# [Collection Validation] /t1/
+|  |- *
+```
+
+#### Expected Output
+
+```
 ✅ Validations.icmt:
 ✅ |- [Root] Root
 ⛔ |  |- [Asset Group] Asset group ::: Expected at most 0 child(ren) of type [Collection Validation] matching /^t1$/, found 1.
