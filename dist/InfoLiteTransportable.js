@@ -9954,7 +9954,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
           recurse(expectedChild, match);
         });
       }
-      const unexpectedChildren = actualNode.children.filter((child) => !matchedChildren.has(child));
+      const unexpectedChildren = actualNode.children.filter((node) => node.validationType == "basic").filter((child) => !matchedChildren.has(child));
       unexpectedChildren.forEach((child) => {
         let error = {
           expected: schemaNode,

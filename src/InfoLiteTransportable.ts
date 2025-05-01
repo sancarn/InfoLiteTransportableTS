@@ -562,10 +562,10 @@ export default class InfoLiteTransportable {
       }
 
       // Report unexpected children
-      const unexpectedChildren = (
-        actualNode.children as IValidationTreeBasicNode[]
-      ).filter((child) => !matchedChildren.has(child));
-      (unexpectedChildren as IValidationTreeBasicNode[]).forEach((child) => {
+      const unexpectedChildren = actualNode.children
+        .filter((node) => node.validationType == "basic") //Only include basic nodes
+        .filter((child) => !matchedChildren.has(child));
+      unexpectedChildren.forEach((child) => {
         let error: IValidationError = {
           expected: schemaNode,
           actual: child,
