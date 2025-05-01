@@ -10126,6 +10126,7 @@ function validationResultsToString(result) {
       );
     } else if (node.errors.length > 1) {
       for (const error of node.errors) {
+        lines.push(`${status} ${indent}|- ${label}`);
         lines.push(`${status} ${indent}|  |- ${error.error.message}`);
       }
     } else if (hasInheritedError) {

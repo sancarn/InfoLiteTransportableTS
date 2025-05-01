@@ -746,6 +746,7 @@ export function validationResultsToString(result: IValidationResult): string {
     } else if (node.errors.length > 1) {
       //Print errors as children
       for (const error of node.errors) {
+        lines.push(`${status} ${indent}|- ${label}`);
         lines.push(`${status} ${indent}|  |- ${error.error.message}`);
       }
     } else if (hasInheritedError) {

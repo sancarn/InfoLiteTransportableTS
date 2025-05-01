@@ -206,7 +206,7 @@ Root
 
 #### Status
 
-ℹ️
+✅
 
 #### DSL
 
@@ -368,7 +368,23 @@ And this fully works as expected:
 ...
 ```
 
-TODO: What this does show though is we at least need a `**` operator to match any number of descendants of any given type.
+~~TODO~~: What this does show though is we at least need a `**` operator to match any number of descendants of any given type.
+
+#### UPDATE: 2025-05-01 FIXED
+
+We have now added a `**` operator to match any number of descendants of any given type, so DSL:
+
+```
+Root
+|- # [Master Group] /Master group/
+|  |- # [Asset Group] /Distribution network/
+|  |  |- # [Distribution Network] /Distribution network/
+|  |- # [Asset Group] /Distribution cost estimator/
+|  |  |- # [Distribution Cost Estimator] /Distribution cost estimator/
+|  |- **
+```
+
+Correctly matches the entire database tree. Updated status accordingly.
 
 ## `binary/AllInfoWorksObject.icmt`
 
@@ -648,7 +664,7 @@ As above.
 
 #### Status
 
-⛔
+✅
 
 #### DSL
 
@@ -699,9 +715,19 @@ or
 🟤 |  |  |- [Collection Validation] t1 ::: (inherited from parent)
 ```
 
-#### Conclusion
+#### UPDATE: 2025-05-01 FIXED
 
-TODO: Rare case, but I think this is a bug.
+Actual output is now:
+
+```
+✅ Validations.icmt: Errors found: 1
+✅ |- [Root] Root
+✅ |  |- [Asset Group] Asset group
+✅ |  |  |- [Collection Validation] t2
+⛔ |  |  |- [Collection Validation] t1 ::: Exceeded maximum of 0 allowed [Collection Validation] child(ren) matching /^t1$/.
+```
+
+Changed status accordingly.
 
 ### Test 7 -
 
@@ -720,17 +746,18 @@ Root
 
 #### Expected Output
 
-Not sure what to expect here.
+Not really sure what to expect here.
 
 #### Actual Output
 
 ```
-✅ Validations.icmt:
+✅ Validations.icmt: Errors found: 2
 ✅ |- [Root] Root
-⛔ |  |  |- Expected at most 1 child(ren) of type [Collection Validation] matching /^.*$/, found 2.
-⛔ |  |  |- Expected at most 1 child(ren) of type [Collection Validation] matching /^.*$/, found 2.
-🟤 |  |  |- [Collection Validation] t2 ::: (inherited from parent)
-🟤 |  |  |- [Collection Validation] t1 ::: (inherited from parent)
+✅ |  |- [Asset Group] Asset group
+✅ |  |  |- [Collection Validation] t2
+⛔ |  |  |- [Collection Validation] t1
+⛔ |  |  |  |- Exceeded maximum of 1 allowed [Collection Validation] child(ren) matching /^.*$/.
+⛔ |  |  |  |- Exceeded maximum of 1 allowed [Collection Validation] child(ren) matching /^.*$/.
 ```
 
 #### Conclusion
