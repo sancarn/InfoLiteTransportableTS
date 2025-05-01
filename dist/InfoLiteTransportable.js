@@ -9876,7 +9876,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
    * Validates the transportable database against a DSL schema.
    * @param dslSchema - A DSL string that describes the expected structure of the transportable database.
    * @param vars - A map of variables that can be used in the DSL string.
-   * @returns - An array of error messages.
+   * @returns - A validation result containing the validation tree and a flat array of errors.
    */
   validate(dslSchema, vars) {
     let dsl = this.parseDSL(dslSchema, vars);
@@ -9884,6 +9884,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
     let cloner = (entry) => {
       return {
         ...entry,
+        validationType: "basic",
         children: entry.children.map(cloner),
         errors: []
       };
@@ -9927,7 +9928,11 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
             }
           };
           errors.push(error);
-          actualNode.errors.push(error);
+          actualNode.children.unshift({
+            validationType: "missing-child",
+            errors: [error],
+            children: []
+          });
         }
         if (matches.length > expectedChild.max) {
           const excessMatches = matches.slice(expectedChild.max);
@@ -9949,9 +9954,7 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
           recurse(expectedChild, match);
         });
       }
-      const unexpectedChildren = actualNode.children.filter(
-        (child) => !matchedChildren.has(child)
-      );
+      const unexpectedChildren = actualNode.children.filter((child) => !matchedChildren.has(child));
       unexpectedChildren.forEach((child) => {
         let error = {
           expected: schemaNode,
@@ -10117,26 +10120,39 @@ function validationResultsToString(result) {
   let lines = [];
   let recurse = (node, depth, hasInheritedError = false) => {
     const indent = "|  ".repeat(depth);
-    const label = `[${node.type}] ${node.name}`;
-    const isDirectError = node.errors.length > 0;
-    const status = isDirectError ? "\u26D4" : hasInheritedError ? "\u{1F7E4}" : "\u2705";
-    if (node.errors.length == 1) {
-      lines.push(
-        `${status} ${indent}|- ${label} ::: ${node.errors[0].error.message}`
-      );
-    } else if (node.errors.length > 1) {
-      for (const error of node.errors) {
+    if (node.validationType === "basic") {
+      const label = `[${node.type}] ${node.name}`;
+      const isDirectError = node.errors.length > 0;
+      let status = "\u2705";
+      if (hasInheritedError) status = "\u{1F7E4}";
+      if (isDirectError) status = "\u26D4";
+      if (node.errors.length == 1) {
+        lines.push(
+          `${status} ${indent}|- ${label} ::: ${node.errors[0].error.message}`
+        );
+      } else if (node.errors.length > 1) {
+        for (const error of node.errors) {
+          lines.push(`${status} ${indent}|- ${label}`);
+          lines.push(`${status} ${indent}|  |- ${error.error.message}`);
+        }
+      } else if (hasInheritedError) {
+        lines.push(
+          `${status} ${indent}|- ${label} ::: (inherited from parent)`
+        );
+      } else {
         lines.push(`${status} ${indent}|- ${label}`);
-        lines.push(`${status} ${indent}|  |- ${error.error.message}`);
       }
-    } else if (hasInheritedError) {
-      lines.push(`${status} ${indent}|- ${label} ::: (inherited from parent)`);
+      node.children.forEach((child) => {
+        recurse(child, depth + 1, isDirectError || hasInheritedError);
+      });
     } else {
-      lines.push(`${status} ${indent}|- ${label}`);
+      lines.push(
+        `\u26D4 ${indent}|- [Missing] ::: ${node.errors[0].error.message}`
+      );
+      for (let i = 1; i < node.errors.length; i++) {
+        lines.push(`\u26D4 ${indent}|  |- ${node.errors[i].error.message}`);
+      }
     }
-    node.children.forEach((child) => {
-      recurse(child, depth + 1, isDirectError || hasInheritedError);
-    });
   };
   recurse(result.tree, 0);
   return lines.join("\n");

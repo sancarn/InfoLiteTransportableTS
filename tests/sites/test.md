@@ -765,3 +765,142 @@ Not really sure what to expect here.
 Seems kind of correct, but I'm not sure what to make of this.
 
 TODO: Rare case. Thoughts?
+
+## `binary/Submission.icmt`
+
+### Test 1
+
+#### Status
+
+⚠️
+
+#### DSL
+
+```
+Root
+|- 1# [Asset Group] /Verified Network \(\d\d\/\d\d\/\d\d\d\d\)/
+|  |- 1# [Collection Network] /523-\d\d\d .* \(\d\d\/\d\d\/\d\d\d\d\)/
+|  |- 1# [Asset Group] /Rain data/
+|  |  |- 1# [Time Varying Data] /.*/
+|  |- 1# [Asset Group] /Telemetry data/
+|  |  |- *
+|- 1# [Asset Group] /Network to Use \(\d\d\/\d\d\/\d\d\d\d\)/
+|  |- 1# [Collection Network] /523-\d\d\d .* \(\d\d\/\d\d\/\d\d\d\d\)/
+|  |- 1# [Asset Group] /Rain data/
+|  |  |- *
+|  |- 1# [Asset Group] /Telemetry data/
+|  |  |- *
+|  |- 1# [Asset Group] /Survey data/
+|  |  |- **
+|- 1# [Asset Group] /Working/
+|  |- 1# [Asset Group] /DWMP \(\d\d\/\d\d\/\d\d\d\d\)/
+|  |  |- **
+|  |- 1# [Asset Group] /Analysis/
+|  |  |- 1+# [Asset Group] /D\d{4} - .*/
+|  |  |  |- **
+```
+
+#### Expected Output
+
+```
+✅ Submission.icmt: Errors found: 2
+✅ |- [Root] Root
+✅ |  |- [Asset Group] Verified Network (22/01/2022)
+✅ |  |  |- [Collection Network] 523-118 Wool Harbour (22/01/2022)
+✅ |  |  |- [Asset Group] Rain data
+✅ |  |  |  |- [Time Varying Data] Rainfall
+⛔ |  |  |  |- [Time Varying Data] Rainfall 2 ::: Exceeded maximum of 1 allowed [Time Varying Data] child(ren) matching /^.*$/.
+✅ |  |  |- [Asset Group] Telemetry data
+✅ |  |  |  |- [Time Varying Data] SPS Telemetry
+✅ |  |  |  |- [Time Varying Data] EDM Telemetry
+⛔ |  |- [Asset Group] Network to Use (15/02/2024) ::: Expected at least 1 child(ren) of type [Asset Group] matching /^Survey data$/, found 0.
+✅ |  |  |- [Collection Network] 523-118 Wool Harbour (15/02/2024) ::: (inherited from parent)
+✅ |  |  |- [Asset Group] Rain data ::: (inherited from parent)
+✅ |  |  |  |- [Time Varying Data] Rainfall ::: (inherited from parent)
+✅ |  |  |- [Asset Group] Telemetry data ::: (inherited from parent)
+✅ |  |  |  |- [Time Varying Data] SPS Telemetry ::: (inherited from parent)
+✅ |  |  |  |- [Time Varying Data] EDM Telemetry ::: (inherited from parent)
+✅ |  |- [Asset Group] Working
+✅ |  |  |- [Asset Group] DWMP (17/06/2024)
+✅ |  |  |  |- [Collection Network] Wool Harbour
+✅ |  |  |  |- [Asset Group] Telemetry data
+✅ |  |  |  |  |- [Time Varying Data] SPS Telemetry
+✅ |  |  |  |  |- [Time Varying Data] EDM Telemetry
+✅ |  |  |  |- [Asset Group] Rain data
+✅ |  |  |  |  |- [Time Varying Data] Rainfall
+✅ |  |  |- [Asset Group] Analysis
+✅ |  |  |  |- [Asset Group] D2462 - River Analysis
+✅ |  |  |  |  |- [Stored Query] 1. Select outfalls
+✅ |  |  |  |  |- [Stored Query] 2. Trace watercourse
+✅ |  |  |  |- [Asset Group] D3001 - SPS Analysis
+✅ |  |  |  |  |- [Stored Query] 1. Select SPS
+✅ |  |  |  |  |- [Stored Query] 2. Perform Analysis
+✅ |  |  |  |  |- [Theme] 3. Apply Theme
+```
+
+#### Actual Output
+
+```
+✅ Submission.icmt: Errors found: 2
+✅ |- [Root] Root
+✅ |  |- [Asset Group] Verified Network (22/01/2022)
+✅ |  |  |- [Collection Network] 523-118 Wool Harbour (22/01/2022)
+✅ |  |  |- [Asset Group] Rain data
+✅ |  |  |  |- [Time Varying Data] Rainfall
+⛔ |  |  |  |- [Time Varying Data] Rainfall 2 ::: Exceeded maximum of 1 allowed [Time Varying Data] child(ren) matching /^.*$/.
+✅ |  |  |- [Asset Group] Telemetry data
+✅ |  |  |  |- [Time Varying Data] SPS Telemetry
+✅ |  |  |  |- [Time Varying Data] EDM Telemetry
+⛔ |  |- [Asset Group] Network to Use (15/02/2024) ::: Expected at least 1 child(ren) of type [Asset Group] matching /^Survey data$/, found 0.
+🟤 |  |  |- [Collection Network] 523-118 Wool Harbour (15/02/2024) ::: (inherited from parent)
+🟤 |  |  |- [Asset Group] Rain data ::: (inherited from parent)
+🟤 |  |  |  |- [Time Varying Data] Rainfall ::: (inherited from parent)
+🟤 |  |  |- [Asset Group] Telemetry data ::: (inherited from parent)
+🟤 |  |  |  |- [Time Varying Data] SPS Telemetry ::: (inherited from parent)
+🟤 |  |  |  |- [Time Varying Data] EDM Telemetry ::: (inherited from parent)
+✅ |  |- [Asset Group] Working
+✅ |  |  |- [Asset Group] DWMP (17/06/2024)
+✅ |  |  |  |- [Collection Network] Wool Harbour
+✅ |  |  |  |- [Asset Group] Telemetry data
+✅ |  |  |  |  |- [Time Varying Data] SPS Telemetry
+✅ |  |  |  |  |- [Time Varying Data] EDM Telemetry
+✅ |  |  |  |- [Asset Group] Rain data
+✅ |  |  |  |  |- [Time Varying Data] Rainfall
+✅ |  |  |- [Asset Group] Analysis
+✅ |  |  |  |- [Asset Group] D2462 - River Analysis
+✅ |  |  |  |  |- [Stored Query] 1. Select outfalls
+✅ |  |  |  |  |- [Stored Query] 2. Trace watercourse
+✅ |  |  |  |- [Asset Group] D3001 - SPS Analysis
+✅ |  |  |  |  |- [Stored Query] 1. Select SPS
+✅ |  |  |  |  |- [Stored Query] 2. Perform Analysis
+✅ |  |  |  |  |- [Theme] 3. Apply Theme
+```
+
+#### Conclusion
+
+Can understand why it did this, because errors inherit to children, but actually all of these children are 100% valid,
+and a missing child doesn't make the whole group invalid...
+
+Better would be as follows:
+
+```
+✅ Submission.icmt: Errors found: 2
+...
+✅ |  |- [Asset Group] Network to Use (15/02/2024)
+⛔ |  |  |- ERROR: Expected at least 1 child(ren) of type [Asset Group] matching /^Survey data$/, found 0.
+✅ |  |  |- [Collection Network] 523-118 Wool Harbour (15/02/2024) ::: (inherited from parent)
+✅ |  |  |- [Asset Group] Rain data ::: (inherited from parent)
+✅ |  |  |  |- [Time Varying Data] Rainfall ::: (inherited from parent)
+✅ |  |  |- [Asset Group] Telemetry data ::: (inherited from parent)
+✅ |  |  |  |- [Time Varying Data] SPS Telemetry ::: (inherited from parent)
+✅ |  |  |  |- [Time Varying Data] EDM Telemetry ::: (inherited from parent)
+...
+```
+
+TODO: This would be a good addition to the formatter. Would be good to consider how we add this (if at all) to the validation tree...
+
+Probably a better approach would be to validate errors based on Error Type. I.E.
+
+- If "actual:self-expected:self" then error needs to chain to children
+- If "actual:child-expected:parent" then error needs to chain to children
+- If "actual:parent-expected:child" then parent can be validated, and other children can be validated(?)

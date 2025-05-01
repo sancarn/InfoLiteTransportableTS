@@ -71,12 +71,30 @@ export type IValidationError = {
 };
 
 /**
+ * A validation tree node represents a node which is either in or missing from the transportable database
+ * and it's corresponding validation errors.
+ */
+export type IValidationTreeNode =
+  | IValidationTreeBasicNode
+  | IValidationTreeMissingNode;
+
+/**
  * A validation tree node represents a node in the transportable database and it's corresponding validation errors.
  */
-export type IValidationTreeNode = {
+export type IValidationTreeBasicNode = {
+  validationType: "basic";
   errors: IValidationError[];
   children: IValidationTreeNode[];
 } & ITransportableEntry;
+
+/**
+ * A missing child node represents a node in the transportable database which was expected but not found.
+ */
+export type IValidationTreeMissingNode = {
+  validationType: "missing-child";
+  errors: IValidationError[];
+  children: IValidationTreeNode[];
+};
 
 /**
  * A validation result represents the result of validating a transportable database against a DSL schema.
@@ -433,7 +451,7 @@ export default class InfoLiteTransportable {
    * Validates the transportable database against a DSL schema.
    * @param dslSchema - A DSL string that describes the expected structure of the transportable database.
    * @param vars - A map of variables that can be used in the DSL string.
-   * @returns - An array of error messages.
+   * @returns - A validation result containing the validation tree and a flat array of errors.
    */
   validate(dslSchema: string, vars: IValidationVariables): IValidationResult {
     //Parse DSL
@@ -446,9 +464,10 @@ export default class InfoLiteTransportable {
     let cloner = (entry: ITransportableEntry): IValidationTreeNode => {
       return {
         ...entry,
+        validationType: "basic",
         children: entry.children.map(cloner),
         errors: [],
-      };
+      } as IValidationTreeBasicNode;
     };
     let tree: IValidationTreeNode = cloner(this.root);
 
@@ -456,7 +475,7 @@ export default class InfoLiteTransportable {
     let errors: IValidationError[] = [];
     const recurse = (
       schemaNode: IValidationNode,
-      actualNode: IValidationTreeNode
+      actualNode: IValidationTreeBasicNode
     ) => {
       //Skip validation on node and all descendants of this node if skipDescendants is set
       if (schemaNode.type === "ANY" && schemaNode.skipDescendants) {
@@ -484,11 +503,13 @@ export default class InfoLiteTransportable {
       }
 
       // Report track unexpected children
-      const matchedChildren = new Set<ITransportableEntry>();
+      const matchedChildren = new Set<IValidationTreeNode>();
 
       // Validate children against schema
       for (const expectedChild of schemaNode.children) {
-        const matches = actualNode.children.filter((child) => {
+        const matches = (
+          actualNode.children as IValidationTreeBasicNode[]
+        ).filter((child) => {
           const isTypeMatch =
             expectedChild.type === "ANY" || child.type === expectedChild.type;
           const isNameMatch =
@@ -509,7 +530,13 @@ export default class InfoLiteTransportable {
             },
           };
           errors.push(error);
-          actualNode.errors.push(error);
+
+          //Add missing child error to actual node
+          actualNode.children.unshift({
+            validationType: "missing-child",
+            errors: [error],
+            children: [],
+          });
         }
         if (matches.length > expectedChild.max) {
           const excessMatches = matches.slice(expectedChild.max);
@@ -535,10 +562,10 @@ export default class InfoLiteTransportable {
       }
 
       // Report unexpected children
-      const unexpectedChildren = actualNode.children.filter(
-        (child) => !matchedChildren.has(child)
-      );
-      unexpectedChildren.forEach((child) => {
+      const unexpectedChildren = (
+        actualNode.children as IValidationTreeBasicNode[]
+      ).filter((child) => !matchedChildren.has(child));
+      (unexpectedChildren as IValidationTreeBasicNode[]).forEach((child) => {
         let error: IValidationError = {
           expected: schemaNode,
           actual: child,
@@ -553,7 +580,7 @@ export default class InfoLiteTransportable {
       });
     };
 
-    recurse(dsl, tree);
+    recurse(dsl, tree as IValidationTreeBasicNode);
 
     return errors.length > 0
       ? { type: "error", tree, errors }
@@ -735,30 +762,46 @@ export function validationResultsToString(result: IValidationResult): string {
     hasInheritedError: boolean = false
   ) => {
     const indent = "|  ".repeat(depth);
-    const label = `[${node.type}] ${node.name}`;
-    const isDirectError = node.errors.length > 0;
-    const status = isDirectError ? "⛔" : hasInheritedError ? "🟤" : "✅";
-    if (node.errors.length == 1) {
-      //Print inline error
-      lines.push(
-        `${status} ${indent}|- ${label} ::: ${node.errors[0].error.message}`
-      );
-    } else if (node.errors.length > 1) {
-      //Print errors as children
-      for (const error of node.errors) {
+    if (node.validationType === "basic") {
+      const label = `[${node.type}] ${node.name}`;
+      const isDirectError = node.errors.length > 0;
+
+      let status = "✅"; //Assume correct
+      if (hasInheritedError) status = "🟤";
+      if (isDirectError) status = "⛔";
+
+      if (node.errors.length == 1) {
+        //Print inline error
+        lines.push(
+          `${status} ${indent}|- ${label} ::: ${node.errors[0].error.message}`
+        );
+      } else if (node.errors.length > 1) {
+        //Print errors as children
+        for (const error of node.errors) {
+          lines.push(`${status} ${indent}|- ${label}`);
+          lines.push(`${status} ${indent}|  |- ${error.error.message}`);
+        }
+      } else if (hasInheritedError) {
+        //Print node with error message "(inherited)"
+        lines.push(
+          `${status} ${indent}|- ${label} ::: (inherited from parent)`
+        );
+      } else {
+        //Print node with no error message
         lines.push(`${status} ${indent}|- ${label}`);
-        lines.push(`${status} ${indent}|  |- ${error.error.message}`);
       }
-    } else if (hasInheritedError) {
-      //Print node with error message "(inherited)"
-      lines.push(`${status} ${indent}|- ${label} ::: (inherited from parent)`);
+      node.children.forEach((child) => {
+        recurse(child, depth + 1, isDirectError || hasInheritedError);
+      });
     } else {
-      //Print node with no error message
-      lines.push(`${status} ${indent}|- ${label}`);
+      //Print missing child node
+      lines.push(
+        `⛔ ${indent}|- [Missing] ::: ${node.errors[0].error.message}`
+      );
+      for (let i = 1; i < node.errors.length; i++) {
+        lines.push(`⛔ ${indent}|  |- ${node.errors[i].error.message}`);
+      }
     }
-    node.children.forEach((child) => {
-      recurse(child, depth + 1, isDirectError || hasInheritedError);
-    });
   };
   recurse(result.tree, 0);
   return lines.join("\n");
