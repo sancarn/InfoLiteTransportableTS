@@ -556,9 +556,11 @@ export default class InfoLiteTransportable {
         }
 
         // Recurse into each matched child
-        matches.forEach((match) => {
-          recurse(expectedChild, match);
-        });
+        if (matches.length >= expectedChild.min) {
+          matches.forEach((match) => {
+            recurse(expectedChild, match);
+          });
+        }
       }
 
       // Report unexpected children

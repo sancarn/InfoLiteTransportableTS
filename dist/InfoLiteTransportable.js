@@ -9950,9 +9950,11 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
             child.errors.push(error);
           }
         }
-        matches.forEach((match) => {
-          recurse(expectedChild, match);
-        });
+        if (matches.length >= expectedChild.min) {
+          matches.forEach((match) => {
+            recurse(expectedChild, match);
+          });
+        }
       }
       const unexpectedChildren = actualNode.children.filter((node) => node.validationType == "basic").filter((child) => !matchedChildren.has(child));
       unexpectedChildren.forEach((child) => {
