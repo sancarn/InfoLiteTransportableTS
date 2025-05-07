@@ -10023,7 +10023,8 @@ var InfoLiteTransportable = class _InfoLiteTransportable {
    * @returns - The validation token.
    */
   parseDSLLine(line, lineNumber) {
-    const depth = (line.match(/\|/g) || []).length;
+    const indentMatch = line.match(/^(\|  )*/)?.[0] ?? "";
+    const depth = (indentMatch.match(/\|/g) || []).length;
     let clean = line.match(/\|- (.*)/)?.[1].trim();
     if (clean == null) throw Error(`DSL line has incorrect syntax "${line}"`);
     switch (clean) {
